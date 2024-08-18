@@ -1,10 +1,6 @@
-from flask_sqlalchemy import SQLAlchemy
+from config import db, flask_bcrypt
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy_serializer import SerializerMixin
-from flask_bcrypt import Bcrypt
-
-db = SQLAlchemy()
-flask_bcrypt = Bcrypt()
 
 class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
@@ -13,15 +9,13 @@ class User(db.Model, SerializerMixin):
     username = db.Column(db.String(120), unique=True, nullable=False)
     _password_hash = db.Column(db.String(128))
     display_name = db.Column(db.String(120))
-    playlists = db.relationship('Playlist', back_populates='user')
-    spotify_access_token = db.Column(db.String(512))
-    spotify_refresh_token = db.Column(db.String(512))
+    downloads = db.relationship('Download', back_populates='user', cascade="all, delete-orphan")
+    spotify_token = db.relationship('SpotifyToken', uselist=False, back_populates='user', cascade="all, delete-orphan")
 
     serialize_rules = (
-        '-_password_hash',
-        '-playlists.user',
-        '-spotify_access_token',
-        '-spotify_refresh_token'
+        '-_password_hash',  # Exclude the password hash from serialization
+        '-downloads.user',  # Prevent recursion
+        '-spotify_token',  # Prevent recursion
     )
 
     @hybrid_property
@@ -36,57 +30,49 @@ class User(db.Model, SerializerMixin):
     def authenticate(self, password):
         return flask_bcrypt.check_password_hash(self._password_hash, password.encode('utf-8'))
 
-class Playlist(db.Model, SerializerMixin):
-    __tablename__ = 'playlists'
-    
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(120), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    
-    user = db.relationship('User', back_populates='playlists')
-    songs = db.relationship('PlaylistSong', back_populates='playlist')
 
-    serialize_rules = (
-        '-user.playlists',
-        '-songs.playlist'
-    )
-
-class Song(db.Model, SerializerMixin):
-    __tablename__ = 'songs'
-    
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    title = db.Column(db.String(120), nullable=False)
-    artist = db.Column(db.String(120), nullable=False)
-
-    playlist_songs = db.relationship('PlaylistSong', back_populates='song')
-
-    serialize_rules = (
-        '-playlist_songs.playlist',
-    )
-
-class PlaylistSong(db.Model, SerializerMixin):
-    __tablename__ = 'playlist_songs'
+class SpotifyToken(db.Model, SerializerMixin):
+    __tablename__ = 'spotify_tokens'
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    playlist_id = db.Column(db.Integer, db.ForeignKey('playlists.id', ondelete='CASCADE'), nullable=False)
-    song_id = db.Column(db.Integer, db.ForeignKey('songs.id', ondelete='CASCADE'), nullable=False)
-
-    playlist = db.relationship('Playlist', back_populates='songs')
-    song = db.relationship('Song', back_populates='playlist_songs')
+    auth_token = db.Column(db.String(512), nullable=False)
+    refresh_token = db.Column(db.String(512), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    user = db.relationship('User', back_populates='spotify_token')
 
     serialize_rules = (
-        '-playlist.songs',
-        '-song.playlist_songs'
+        '-user',  # Prevent recursion
     )
+
+
+class Track(db.Model, SerializerMixin):
+    __tablename__ = 'tracks'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    song_id = db.Column(db.String(120), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    yt_url = db.Column(db.String(255))
+
+    downloads = db.relationship('Download', back_populates='track', cascade="all, delete-orphan")
+
+    serialize_rules = (
+        '-downloads.track',  # Prevent recursion
+    )
+
 
 class Download(db.Model, SerializerMixin):
     __tablename__ = 'downloads'
-    
+
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    song_id = db.Column(db.Integer, db.ForeignKey('songs.id'))
-    url = db.Column(db.String(255), nullable=False)
-    status = db.Column(db.String(50), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    track_id = db.Column(db.Integer, db.ForeignKey('tracks.id'), nullable=False)
+    date_time = db.Column(db.DateTime, nullable=False)
+
+    user = db.relationship('User', back_populates='downloads')
+    track = db.relationship('Track', back_populates='downloads')
 
     serialize_rules = (
-        '-song.playlist_songs',
+        '-user.downloads',  # Prevent recursion
+        '-track.downloads',  # Prevent recursion
     )
