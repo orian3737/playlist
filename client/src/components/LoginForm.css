@@ -1,0 +1,13 @@
+/* src/components/LoginForm.css */
+.login-form-container {
+    @apply flex justify-center mt-8;
+  }
+  
+  .login-card {
+    @apply max-w-sm mx-auto p-6 bg-white rounded-lg shadow-md;
+  }
+  
+  .login-button {
+    @apply w-full mt-4 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600;
+  }
+  

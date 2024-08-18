@@ -36,17 +36,31 @@ const Navbar = () => {
           </li>
           <li className="h-20 border-b-2 border-transparent md:hover:border-blue-400">
             <NavLink
-              to="/"
+              to="/login"
               className={({ isActive }) => "text-white flex items-center py-2 px-4 h-full" + (isActive ? " text-blue-400" : '')}
               onClick={closeMobileMenu}
             >
-              Login
+              Sign Up / Login
             </NavLink>
           </li>
         </ul>
+        <div className="text-white">
+          {userData ? (
+            <>
+              Logged in as {userData.username}
+              {spotifyConnected ? (
+                <span> | Spotify Connected</span>
+              ) : (
+                <Link to="/connect-spotify" className="ml-2 underline">Connect to Spotify</Link>
+              )}
+            </>
+          ) : (
+            <Link to="/login" className="underline">Sign Up / Login</Link>
+          )}
+        </div>
       </div>
     </nav>
   );
 };
 
-export default Navbar
+export default Navbar;

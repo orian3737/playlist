@@ -1,28 +1,21 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
+  base: './',
   plugins: [react()],
-  root: './client',  // Root directory for Vite
-  base: './',  // Base path for assets
   build: {
-    outDir: '../dist',  // Output directory for the build
     assetsDir: 'static',
-    rollupOptions: {
-      input: {
-        main: './src/main.jsx', // Path to the index file
-      },
-    },
   },
   server: {
     port: 5173,
     cors: true,
     proxy: {
       "/api": {
-        target: "http://localhost:5555/",
+        target: "http://127.0.0.1:5000", // Flask backend URL
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/api/, ""),
+        rewrite: (path) => path.replace(/^\/api/, ""), // Strip '/api' prefix when forwarding to backend
       },
     },
   },

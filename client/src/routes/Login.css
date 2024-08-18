@@ -1,0 +1,25 @@
+/* src/routes/Login.css */
+
+/* Page background */
+body {
+    background-color: black;
+    color: white; /* You can set the default text color to white for better contrast */
+  }
+  
+  /* Button styling */
+  .spotify-button {
+    background-color: green;
+    color: black;
+    font-weight: bold;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  
+  /* Hover effect */
+  .spotify-button:hover {
+    background-color: darkgreen;
+  }
+  

@@ -1,19 +1,22 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="
-  connect-src 'self' https://*.spotify.com https://www.google-analytics.com https://stats.g.doubleclick.net https://*.ingest.sentry.io/ https://*.googletagmanager.com https://infragrid.v.network;
-  script-src 'self' https://www.google-analytics.com https://ssl.google-analytics.com https://www.google.com https://www.gstatic.com/recaptcha/ https://www.google.com/recaptcha/ https://*.googletagmanager.com 'sha256-YqD0Y6nJN+K0Y08J+Ena6eHgZrJ7WcWbIsC/u7GiyVk=' https://accounts.scdn.co;
-  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com/css2;
+<head>
+  <link rel="stylesheet" href="path/to/your/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://apis.google.com;
+    style-src 'self' https://fonts.googleapis.com;
+    img-src 'self' https://example.com;
+    connect-src 'self' https://api.example.com;
 ">
 
-    <title>Vite + React</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+  <title>Vite App</title>
+  <link rel="stylesheet" href="/src/App.css">
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/App.jsx"></script>
+</body>
 </html>

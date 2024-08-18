@@ -16,9 +16,6 @@ from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
-
-
-
 # Spotify setup
 client_id = os.getenv('SPOTIFY_CLIENT_ID')
 client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
@@ -35,19 +32,37 @@ sp_oauth = SpotifyOAuth(
     show_dialog=True
 )
 
-
-
 @app.after_request
 def add_csp_header(response):
     csp = (
         "default-src 'self'; "
-        "connect-src 'self' https://*.spotify.com https://brqztkabsqpvevgcmrgr.supabase.co https://infragrid.v.network; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "  # Allow inline scripts (be cautious with this setting)
+        "script-src 'self' https://www.google-analytics.com https://ssl.google-analytics.com https://www.google.com https://www.gstatic.com/recaptcha/ https://www.google.com/recaptcha/ https://*.googletagmanager.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com;"
     )
     response.headers['Content-Security-Policy'] = csp
     return response
+
+
+@app.route('/check_session', methods=['GET'])
+def check_session():
+    user_id = session.get('user_id')
+    spotify_token = session.get('spotify_token')
+    
+    if user_id:
+        user = User.query.get(user_id)
+        if user:
+            return jsonify({
+                "loggedIn": True,
+                "username": user.username,
+                "spotifyConnected": bool(spotify_token)
+            })
+    
+    return jsonify({
+        "loggedIn": False,
+        "spotifyConnected": bool(spotify_token)
+    }), 401
+
 
 @app.route('/')
 def home():
@@ -57,81 +72,118 @@ def home():
         return redirect(auth_url)
     return redirect(url_for('get_playlists'))
 
+@app.route('/check_user', methods=['POST'])
+def check_user():
+    data = request.get_json()
+    email = data.get('email')
+    user = User.query.filter_by(email=email).first()
+    
+    if user:
+        return jsonify({"exists": True, "username": user.username})
+    return jsonify({"exists": False})
+
+@app.route('/signup', methods=['POST'])
+def signup():
+    data = request.get_json()
+    # Extract signup details from the request and create a new user
+    username = data.get('username')
+    email = data.get('email')
+    full_name = data.get('full_name')
+    password = data.get('password')
+
+    # Check if user already exists
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        return jsonify({"error": "User already exists"}), 400
+
+    new_user = User(username=username, email=email, full_name=full_name)
+    new_user.set_password(password)
+    db.session.add(new_user)
+    db.session.commit()
+
+    # Automatically log them in using Spotify OAuth
+    auth_url = sp_oauth.get_authorize_url()
+    return jsonify({"auth_url": auth_url})
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    user = User.query.filter_by(email=email).first()
+    if user and user.check_password(password):
+        session['user_id'] = user.id
+        return jsonify({"message": "Logged in successfully"})
+    return jsonify({"error": "Invalid credentials"}), 401
+
 @app.route('/callback')
 def callback():
-    try:
-        code = request.args.get('code')
-        if not code:
-            return "No authorization code received.", 400
+    code = request.args.get('code')
+    token_info = sp_oauth.get_access_token(code)
+    if token_info:
+        session['spotify_token'] = token_info
 
-        # Check if the code is valid and retrieve token info
-        token_info = sp_oauth.get_access_token(code)
-        if not token_info:
-            return "Failed to retrieve token.", 400
+        if 'user_id' not in session:
+            # Fetch or create the user based on Spotify info
+            spotify = Spotify(auth=token_info['access_token'])
+            spotify_user = spotify.current_user()
+            user = User.query.filter_by(username=spotify_user['display_name']).first()
+            
+            if not user:
+                # Create a new user if not found
+                user = User(username=spotify_user['display_name'], display_name=spotify_user['display_name'])
+                db.session.add(user)
+                db.session.commit()
 
-        # Save token info in session
-        session['token_info'] = token_info if isinstance(token_info, dict) else {'access_token': token_info}
-        save_user(session['token_info'])  # Save or update user details in Supabase
-
-        return redirect(url_for('get_playlists'))
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return f"An error occurred: {e}", 500
-
-@app.route('/get_playlists')  #adding in the id parsing
-def get_playlists():
-    token_info = session.get('token_info')
-    if not sp_oauth.validate_token(token_info):
-        auth_url = sp_oauth.get_authorize_url()
-        return redirect(auth_url)
-
-    sp = Spotify(auth_manager=sp_oauth)
-    playlists = sp.current_user_playlists()
-    playlists_info = [{
-        'id': pl['id'],
-        'name': pl['name'],
-        'url': pl['external_urls']['spotify']
-    } for pl in playlists['items']]
+            session['user_id'] = user.id
+        
+        save_user(session['spotify_token'])
+        return redirect(url_for('get_playlists'))  # Redirect to get_playlists endpoint
     
-    playlist_tracks_info = []
+    return "Authorization failed.", 400
 
-    for playlist in playlists_info:
+@app.route('/playlists')
+def get_playlists():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('home'))  # Redirect to home if user is not logged in
+
+    user = User.query.get(user_id)
+    spotify_token = SpotifyToken.query.filter_by(user_id=user_id).first()
+
+    if not spotify_token:
+        return "Spotify token not found.", 400
+
+    spotify = Spotify(auth=spotify_token.auth_token)
+    playlists = spotify.current_user_playlists()
+
+    playlists_with_tracks = []
+    for playlist in playlists['items']:
         playlist_id = playlist['id']
-        tracks = sp.playlist_tracks(playlist_id)
-        track_info = [{
-            'name': track['track']['name'],
-            'artist': track['track']['artists'][0]['name']
-        } for track in tracks['items']]
-        playlist_tracks_info.append({
+        tracks_response = spotify.playlist_tracks(playlist_id)
+        playlist_with_tracks = {
             'name': playlist['name'],
-            'url': playlist['url'],
-            'tracks': track_info
-        })
+            'description': playlist.get('description', ''),
+            'owner': playlist['owner']['display_name'],
+            'tracks': []
+        }
+        for track_item in tracks_response['items']:
+            track = track_item['track']
+            track_info = {
+                'name': track['name'],
+                'album': track['album']['name'],
+                'artists': [artist['name'] for artist in track['artists']],
+                'external_url': track['external_urls']['spotify']
+            }
+            playlist_with_tracks['tracks'].append(track_info)
+        
+        playlists_with_tracks.append(playlist_with_tracks)
 
-    return jsonify(playlist_tracks_info)
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return 
-
-@app.route('/login')
-def login():
-    # Redirect to Spotify authentication page
-    auth_url = sp_oauth.get_authorize_url()
-    return redirect(auth_url)
+    return jsonify(playlists_with_tracks)
 
 def save_user(token_info):
-    # Create or update user in SQLAlchemy database
-    user = User.query.filter_by(username='example_username').first()
-    if not user:
-        user = User(
-            username='example_username',
-            display_name='Example Display Name'
-        )
-        db.session.add(user)
-    
-    # Create or update SpotifyToken
+    user = User.query.get(session['user_id'])
     spotify_token = SpotifyToken.query.filter_by(user_id=user.id).first()
     if not spotify_token:
         spotify_token = SpotifyToken(
@@ -143,7 +195,7 @@ def save_user(token_info):
     else:
         spotify_token.auth_token = token_info['access_token']
         spotify_token.refresh_token = token_info.get('refresh_token')
-    
+
     db.session.commit()
 
 if __name__ == '__main__':
