@@ -13,7 +13,7 @@ const AppLayout = () => {
     if (!userData) {
       navigate('/'); // Redirect to login if there is no user data
     }
-  }, [userData, navigate]);
+  }, [userData]);
 
 
 

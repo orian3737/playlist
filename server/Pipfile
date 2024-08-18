@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 flask = "*"
 flask-sqlalchemy = "*"
-sqlalchemy-serializer = "1.4.12"  # Updated version
+sqlalchemy-serializer = "1.4.12"
 flask-migrate = "*"
 flask-cors = "*"
 flask-restful = "*"

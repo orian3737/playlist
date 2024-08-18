@@ -16,132 +16,110 @@ from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
-# Spotify setup
-client_id = os.getenv('SPOTIFY_CLIENT_ID')
-client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
-redirect_uri = os.getenv('SPOTIFY_REDIRECT_URI')
-scope = 'playlist-read-private'
-
-cache_handler = FlaskSessionCacheHandler(session)
-sp_oauth = SpotifyOAuth(
-    client_id=client_id,
-    client_secret=client_secret,
-    redirect_uri=redirect_uri,
-    scope=scope,
-    cache_handler=cache_handler,
-    show_dialog=True
-)
-
-@app.after_request
-def add_csp_header(response):
-    csp = (
-        "default-src 'self'; "
-        "script-src 'self' https://www.google-analytics.com https://ssl.google-analytics.com https://www.google.com https://www.gstatic.com/recaptcha/ https://www.google.com/recaptcha/ https://*.googletagmanager.com; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-        "font-src 'self' https://fonts.gstatic.com;"
-    )
-    response.headers['Content-Security-Policy'] = csp
-    return response
 
 
-@app.route('/check_session', methods=['GET'])
-def check_session():
-    user_id = session.get('user_id')
-    spotify_token = session.get('spotify_token')
-    
-    if user_id:
-        user = User.query.get(user_id)
-        if user:
-            return jsonify({
-                "loggedIn": True,
-                "username": user.username,
-                "spotifyConnected": bool(spotify_token)
-            })
-    
-    return jsonify({
-        "loggedIn": False,
-        "spotifyConnected": bool(spotify_token)
-    }), 401
 
-
-@app.route('/')
-def home():
-    token_info = cache_handler.get_cached_token()
-    if not sp_oauth.validate_token(token_info):
-        auth_url = sp_oauth.get_authorize_url()
-        return redirect(auth_url)
-    return redirect(url_for('get_playlists'))
-
-@app.route('/check_user', methods=['POST'])
-def check_user():
-    data = request.get_json()
-    email = data.get('email')
-    user = User.query.filter_by(email=email).first()
-    
+class CheckSession(Resource):
+  def get(self):
+    user = User.query.filter(User.id == session.get('user_id')).first()
     if user:
-        return jsonify({"exists": True, "username": user.username})
-    return jsonify({"exists": False})
+        return make_response(user.to_dict(), 200)
+    return {'error': 'Unauthorized'}, 401
 
-@app.route('/signup', methods=['POST'])
-def signup():
-    data = request.get_json()
-    # Extract signup details from the request and create a new user
-    username = data.get('username')
-    email = data.get('email')
-    full_name = data.get('full_name')
-    password = data.get('password')
-
-    # Check if user already exists
-    existing_user = User.query.filter_by(email=email).first()
-    if existing_user:
-        return jsonify({"error": "User already exists"}), 400
-
-    new_user = User(username=username, email=email, full_name=full_name)
-    new_user.set_password(password)
-    db.session.add(new_user)
-    db.session.commit()
-
-    # Automatically log them in using Spotify OAuth
-    auth_url = sp_oauth.get_authorize_url()
-    return jsonify({"auth_url": auth_url})
-
-@app.route('/login', methods=['POST'])
-def login():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-
-    user = User.query.filter_by(email=email).first()
-    if user and user.check_password(password):
-        session['user_id'] = user.id
-        return jsonify({"message": "Logged in successfully"})
-    return jsonify({"error": "Invalid credentials"}), 401
-
-@app.route('/callback')
-def callback():
-    code = request.args.get('code')
-    token_info = sp_oauth.get_access_token(code)
-    if token_info:
-        session['spotify_token'] = token_info
-
-        if 'user_id' not in session:
-            # Fetch or create the user based on Spotify info
-            spotify = Spotify(auth=token_info['access_token'])
-            spotify_user = spotify.current_user()
-            user = User.query.filter_by(username=spotify_user['display_name']).first()
+class Signup(Resource):
+  def post(self):
+    username = request.get_json().get('username')
+    display_name = request.get_json().get('display_name')
+    password = request.get_json().get('password')
+    if username and password and not User.query.filter(User.username == username).first():
+        new_user = User(
+        username = username,
+        display_name = display_name,
+        )
+        new_user.password_hash = password
+        try:
             
-            if not user:
-                # Create a new user if not found
-                user = User(username=spotify_user['display_name'], display_name=spotify_user['display_name'])
-                db.session.add(user)
-                db.session.commit()
+            db.session.add(new_user)
+            db.session.commit()
+            session['user_id'] = new_user.id
+            return make_response(new_user.to_dict(), 201)
+           
+        except IntegrityError:
+            return {'error': '422 Unprocessable Entity'}, 422
 
-            session['user_id'] = user.id
-        
-        save_user(session['spotify_token'])
-        return redirect(url_for('get_playlists'))  # Redirect to get_playlists endpoint
-    
-    return "Authorization failed.", 400
+class Login(Resource):
+  def post(self):
+    data = request.get_json()
+    username = data['username']
+    password = data['password']
+    user = User.query.filter(User.username == username).first()
+    if user:
+      if user.authenticate(password):
+        session['user_id'] = user.id
+        if session['user_id']:
+          return make_response(user.to_dict(), 200)
+        return {'error': 'session could not be established'}, 400
+      return {'error': "Unauthorized"}, 401
+    return {'error': "User Not Found"}, 404
+  
+class Logout(Resource):
+    def delete(self):
+        if session.get('user_id'):
+            session['user_id'] = None 
+            session.pop('user_id', None)
+            response = make_response({"message": "Logged out successfully"}, 200)
+            response.set_cookie('id', '', expires=0, path='/', httponly=True)  # Clear the 'id' cookie
+            return response
+        return make_response({'error': 'Unauthorized'}, 401)
+  
+
+api.add_resource(CheckSession, '/check_session', endpoint='check_session')
+api.add_resource(Login, '/login', endpoint='login')
+api.add_resource(Logout, '/logout', endpoint='logout')
+api.add_resource(Signup, '/signup', endpoint='signup')
+
+# @app.route('/oauth')
+# def home():
+#     token_info = cache_handler.get_cached_token()
+#     if not sp_oauth.validate_token(token_info):
+#         auth_url = sp_oauth.get_authorize_url()
+#         return redirect(auth_url)
+#     return redirect(url_for('get_playlists'))
+
+
+
+#     # Automatically log them in using Spotify OAuth
+#     auth_url = sp_oauth.get_authorize_url()
+#     return jsonify({"auth_url": auth_url})
+
+
+
+class Callback(Resource):
+    def get(self):
+        code = request.args.get('code')
+        user = User.query.get(session.get('user_id'))
+
+        if not code or not user:
+            return "Authorization failed.", 400
+
+        try:
+            token_info = sp_oauth.get_access_token(code, as_dict=True)
+            if not token_info:
+                return "Authorization failed.", 400
+
+            spotify_token = SpotifyToken(
+                auth_token=token_info['access_token'],
+                refresh_token=token_info['refresh_token'],
+                expires_at=token_info['expires_at'],
+                user_id=user.id
+            )
+            db.session.add(spotify_token)
+            db.session.commit()
+            return redirect(url_for('get_playlists'))  # Redirect to fetch playlists
+        except Exception:
+            return "Authorization failed.", 400
+
+api.add_resource(Callback, '/callback')
 
 @app.route('/playlists')
 def get_playlists():
@@ -155,8 +133,28 @@ def get_playlists():
     if not spotify_token:
         return "Spotify token not found.", 400
 
+    # Refresh the token if it has expired
+    if sp_oauth.is_token_expired({
+        'access_token': spotify_token.auth_token,
+        'refresh_token': spotify_token.refresh_token,
+        'expires_at': spotify_token.expires_at
+    }):
+        try:
+            token_info = sp_oauth.refresh_access_token(spotify_token.refresh_token)
+            spotify_token.auth_token = token_info['access_token']
+            spotify_token.refresh_token = token_info.get('refresh_token', spotify_token.refresh_token)
+            spotify_token.expires_at = token_info['expires_at']
+            db.session.commit()
+        except Exception:
+            return "Failed to refresh Spotify token.", 400
+
+    # Use the (potentially refreshed) token to fetch playlists
     spotify = Spotify(auth=spotify_token.auth_token)
-    playlists = spotify.current_user_playlists()
+
+    try:
+        playlists = spotify.current_user_playlists()
+    except Exception:
+        return "Failed to fetch playlists from Spotify.", 400
 
     playlists_with_tracks = []
     for playlist in playlists['items']:
@@ -177,26 +175,44 @@ def get_playlists():
                 'external_url': track['external_urls']['spotify']
             }
             playlist_with_tracks['tracks'].append(track_info)
-        
+
         playlists_with_tracks.append(playlist_with_tracks)
 
     return jsonify(playlists_with_tracks)
 
-def save_user(token_info):
-    user = User.query.get(session['user_id'])
-    spotify_token = SpotifyToken.query.filter_by(user_id=user.id).first()
-    if not spotify_token:
-        spotify_token = SpotifyToken(
-            auth_token=token_info['access_token'],
-            refresh_token=token_info.get('refresh_token'),
-            user=user
-        )
-        db.session.add(spotify_token)
-    else:
-        spotify_token.auth_token = token_info['access_token']
-        spotify_token.refresh_token = token_info.get('refresh_token')
+
 
     db.session.commit()
+
+
+# @app.after_request
+# def add_csp_header(response):
+#     csp = (
+#         "default-src 'self'; "
+#         "script-src 'self' https://apis.google.com; "
+#         "connect-src 'self' http://localhost:5000; "  # Allow connections to localhost:5555
+#         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+#         "font-src 'self' https://fonts.gstatic.com;"
+#     )
+#     response.headers['Content-Security-Policy'] = csp
+#     return response
+
+# Spotify setup
+client_id = os.getenv('SPOTIFY_CLIENT_ID')
+client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
+redirect_uri = os.getenv('SPOTIFY_REDIRECT_URI')
+scope = 'playlist-read-private'
+
+cache_handler = FlaskSessionCacheHandler(session)
+sp_oauth = SpotifyOAuth(
+    client_id=client_id,
+    client_secret=client_secret,
+    redirect_uri=redirect_uri,
+    scope=scope,
+    cache_handler=cache_handler,
+    show_dialog=True
+)
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

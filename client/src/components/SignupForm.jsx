@@ -1,98 +1,116 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Card, Label, TextInput } from "flowbite-react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import './LoginForm.css';
-import { useNavigate } from 'react-router-dom';
 
-function SignupForm() {
+function SignUpForm({ setUserData, setForm }) {
   const [eye, setEye] = useState(false);
-  const [confirmEye, setConfirmEye] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [values, setValues] = useState({
+    username: '',
+    display_name: '',
+    password: ''
+  });
   const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setValues({
+      ...values,
+      [e.target.name]: e.target.value
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (password !== confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
+    setIsLoading(true);
 
-    try {
-      const response = await fetch('/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, full_name: fullName, username: email }),
-      });
+    const url = 'http://localhost:5000/signup';
 
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        username: values.username,
+        display_name: values.display_name,
+        password: values.password,
+      }),
+      credentials: 'include'
+    })
+    .then(response => {
       if (response.ok) {
-        alert("Sign up successful! You can now log in.");
-        navigate('/login');
+        return response.json();
       } else {
-        const errorData = await response.json();
-        alert(errorData.error || "Sign up failed");
+        throw new Error("HTTP error " + response.status);
       }
-    } catch (error) {
-      console.error("Sign up error:", error);
-      alert("Sign up failed");
-    }
+    })
+    .then((data) => {
+      console.log('Success', data);
+      setUserData(data);
+      navigate('/Home');
+    })
+    .catch((error) => {
+      console.error('Signup Error:', error);
+      alert("Signup Failed: " + error.message);
+    })
+    .finally(() => {
+      setIsLoading(false);
+    });
   };
 
   return (
     <div className="signup-form-container">
       <Card className="signup-card">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Label htmlFor="fullName" value="Full Name" />
-          <TextInput
-            id="fullName"
-            type="text"
-            placeholder="Your Full Name"
-            required
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-          />
-          <Label htmlFor="email" value="Your Email" />
-          <TextInput
-            id="email"
-            type="email"
-            placeholder="youremail@example.com"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <Label htmlFor="password" value="Password" />
+          <div>
+            <Label htmlFor="username" value="Your username" />
+            <TextInput 
+              id="username" 
+              name="username"
+              type="text" 
+              placeholder="Username" 
+              required 
+              value={values.username}
+              onChange={handleChange}
+            />
+          </div>
+          <div>
+            <Label htmlFor="display_name" value="Display Name" />
+            <TextInput 
+              id="display_name" 
+              name="display_name"
+              type="text" 
+              placeholder="Display Name" 
+              required 
+              value={values.display_name}
+              onChange={handleChange}
+            />
+          </div>
           <div className="flex flex-row items-center">
-            <TextInput
-              id="password"
-              type={eye ? 'text' : 'password'}
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+            <TextInput 
+              id="password1" 
+              name="password"
+              type={eye ? 'text' : 'password'} 
+              placeholder="Password"
+              required 
+              value={values.password}
+              onChange={handleChange}
             />
             <button onClick={() => setEye(!eye)} type="button">
               {eye ? <FaEye /> : <FaEyeSlash />}
             </button>
           </div>
-          <Label htmlFor="confirmPassword" value="Confirm Password" />
-          <div className="flex flex-row items-center">
-            <TextInput
-              id="confirmPassword"
-              type={confirmEye ? 'text' : 'password'}
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-            <button onClick={() => setConfirmEye(!confirmEye)} type="button">
-              {confirmEye ? <FaEye /> : <FaEyeSlash />}
-            </button>
+          <Button className="signup-button" type="submit" disabled={isLoading}>
+            {isLoading ? 'Signing up...' : 'Sign Up'}
+          </Button>
+          <div className="text-red-500">
+            Already have an account? <span onClick={() => setForm(true)}>Log in!</span>
           </div>
-          <Button className="signup-button" type="submit">Sign Up</Button>
         </form>
       </Card>
     </div>
   );
 }
 
-export default SignupForm;
+export default SignUpForm;
