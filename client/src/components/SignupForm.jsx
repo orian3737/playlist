@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, Label, TextInput } from "flowbite-react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { useUserContext } from '../components/UserContext';
 
-function SignUpForm({ setUserData, setForm }) {
+function SignUpForm({ setForm }) {
   const [eye, setEye] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { userData, setUserData } = useUserContext();
   const [values, setValues] = useState({
     username: '',
     display_name: '',
@@ -48,7 +50,7 @@ function SignUpForm({ setUserData, setForm }) {
     .then((data) => {
       console.log('Success', data);
       setUserData(data);
-      navigate('/Home');
+      navigate('/Home/dash');
     })
     .catch((error) => {
       console.error('Signup Error:', error);

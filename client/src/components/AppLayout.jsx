@@ -11,7 +11,7 @@ const AppLayout = () => {
 
   useEffect(() => {
     if (!userData) {
-      navigate('/'); // Redirect to login if there is no user data
+      navigate('/login'); // Redirect to login if there is no user data
     }
   }, [userData]);
 

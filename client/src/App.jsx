@@ -4,10 +4,11 @@ import AppLayout from "./components/AppLayout";
 import Home from "./routes/Home";
 import ErrorPage from "./routes/ErrorPage";
 import Login from "./routes/Login";
+import Callback from "./routes/Callback";
 
 const router = createBrowserRouter([
   {
-    path: "/",
+    path: "/Home",
     element: <AppLayout />,
     errorElement: <ErrorPage />,
     loader: async () => {
@@ -19,17 +20,31 @@ const router = createBrowserRouter([
     },
     children: [
       {
-        path: "/Home",
+        path: "/Home/dash",
         element: <Home />,
       },
+      
       {
-        path: "/",
-        element: <Login />,
+        path: "/Home/callback",
+        element: <Callback />,
+        errorElement: <ErrorPage />,
       },
     ],
+  },
+  {
+    path: "/",
+    element: <AppLayout />,
+    children: [
+      {
+      path: "/login",
+      element: <Login/>
+  },
+],
   },
 ]);
 
 createRoot(document.getElementById("root")).render(
+  
   <RouterProvider router={router} />
+  
 );

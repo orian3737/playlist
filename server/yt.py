@@ -14,13 +14,39 @@ from spotipy.oauth2 import SpotifyOAuth
 from urllib.parse import urlencode
 from datetime import datetime
 from dotenv import load_dotenv
-import youtube_dl_exec as ytdl_exec
+import youtube_dl as ytdl_exec  # Corrected import statement
+
 load_dotenv()
+
+# Set the directory for YouTube downloads
+app.config['YOUTUBE_DL_DIR'] = os.path.join(os.getcwd(), 'downloads')
 
 # Setup download path
 DOWNLOAD_PATH = app.config['YOUTUBE_DL_DIR']
 if not os.path.exists(DOWNLOAD_PATH):
     os.makedirs(DOWNLOAD_PATH)
+
+# Setup download path
+DOWNLOAD_PATH = app.config['YOUTUBE_DL_DIR']
+if not os.path.exists(DOWNLOAD_PATH):
+    os.makedirs(DOWNLOAD_PATH)
+    
+# Spotify setup
+client_id = os.getenv('SPOTIFY_CLIENT_ID')
+client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
+redirect_uri = os.getenv('SPOTIFY_REDIRECT_URI')
+scope = 'playlist-read-private'
+
+cache_handler = FlaskSessionCacheHandler(session)
+sp_oauth = SpotifyOAuth(
+    client_id=client_id,
+    client_secret=client_secret,
+    redirect_uri=redirect_uri,
+    scope=scope,
+    cache_handler=cache_handler,
+    show_dialog=True
+)
+
 
 # OAuth and User Authentication Routes
 # RESTful resource for checking user session
@@ -48,36 +74,7 @@ class Signup(Resource):
             except IntegrityError:
                 return {'error': '422 Unprocessable Entity'}, 422
 
-# RESTful resource for user login
-class Login(Resource):
-    def post(self):
-        data = request.get_json()
-        username = data['username']
-        password = data['password']
-        user = User.query.filter(User.username == username).first()
-        if user:
-            if user.authenticate(password):
-                session['user_id'] = user.id
-                return make_response(user.to_dict(), 200)
-            return {'error': "Unauthorized"}, 401
-        return {'error': "User Not Found"}, 404
 
-# RESTful resource for user logout
-class Logout(Resource):
-    def delete(self):
-        if session.get('user_id'):
-            session['user_id'] = None 
-            session.pop('user_id', None)
-            response = make_response({"message": "Logged out successfully"}, 200)
-            response.set_cookie('id', '', expires=0, path='/', httponly=True)  # Clear the 'id' cookie
-            return response
-        return make_response({'error': 'Unauthorized'}, 401)
-
-# Registering RESTful routes for authentication
-api.add_resource(CheckSession, '/check_session', endpoint='check_session')
-api.add_resource(Login, '/login', endpoint='login')
-api.add_resource(Logout, '/logout', endpoint='logout')
-api.add_resource(Signup, '/signup', endpoint='signup')
 
 # Home route to start Spotify OAuth process
 @app.route('/')
@@ -171,9 +168,73 @@ def save_user(token_info):
         spotify_token.auth_token = token_info['access_token']
         spotify_token.refresh_token = token_info.get('refresh_token')
     db.session.commit()
+    
+# RESTful resource for user login
+class Login(Resource):
+    def post(self):
+        data = request.get_json()  # Get JSON data from the frontend request
+        username = data.get('username')  # Extract username
+        password = data.get('password')  # Extract password
+
+        # Query the database for the user
+        user = User.query.filter(User.username == username).first()
+
+        if user and user.authenticate(password):  # Check if the user exists and the password is correct
+            session['user_id'] = user.id  # Store user ID in session
+            return make_response(jsonify(user.to_dict()), 200)  # Return user data and success status
+
+        # Return error if login fails
+        return make_response(jsonify({'error': 'Unauthorized'}), 401)
+
+
+# RESTful resource for user logout
+class Logout(Resource):
+    def delete(self):
+        if session.get('user_id'):
+            session['user_id'] = None 
+            session.pop('user_id', None)
+            response = make_response({"message": "Logged out successfully"}, 200)
+            response.set_cookie('id', '', expires=0, path='/', httponly=True)  # Clear the 'id' cookie
+            return response
+        return make_response({'error': 'Unauthorized'}, 401)
+    
+# Registering RESTful routes for authentication
+api.add_resource(CheckSession, '/check_session', endpoint='check_session')
+api.add_resource(Login, '/login', endpoint='login')
+api.add_resource(Logout, '/logout', endpoint='logout')
+api.add_resource(Signup, '/signup', endpoint='signup')
 
 # YouTube Download Routes
 # RESTful resource for track downloading
+
+def download_youtube_audio(youtube_url, track_name):
+    """
+    Download audio from a YouTube URL and save it with the specified track name.
+
+    Args:
+    - youtube_url (str): The URL of the YouTube video.
+    - track_name (str): The name of the track to save the audio file as.
+
+    Returns:
+    - str: The path to the downloaded audio file.
+    """
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': os.path.join(DOWNLOAD_PATH, f'{track_name}.mp3'),
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+        'quiet': True,
+        'noplaylist': True
+    }
+
+    with ytdl_exec.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([youtube_url])
+
+    return os.path.join(DOWNLOAD_PATH, f'{track_name}.mp3')
+
 class DownloadTrack(Resource):
     def post(self):
         track_id = request.json.get('track_id')
@@ -187,8 +248,8 @@ class DownloadTrack(Resource):
         
         track = Track.query.filter_by(song_id=track_id).first()
         if not track:
-            search_results = ytdl_exec(track_name, {'dumpSingleJson': True})
-            youtube_url = search_results['webpage_url']
+            search_results = ytdl_exec.YoutubeDL({'dump_single_json': True}).extract_info(f"ytsearch:{track_name}", download=False)
+            youtube_url = search_results['entries'][0]['webpage_url']
             output_file = download_youtube_audio(youtube_url, track_name)
             
             track = Track(song_id=track_id, name=track_name, yt_url=youtube_url)
@@ -220,8 +281,8 @@ class DownloadPlaylist(Resource):
             
             track = Track.query.filter_by(song_id=track_info['id']).first()
             if not track:
-                search_results = ytdl_exec(track_name, {'dumpSingleJson': True})
-                youtube_url = search_results['webpage_url']
+                search_results = ytdl_exec.YoutubeDL({'dump_single_json': True}).extract_info(f"ytsearch:{track_name}", download=False)
+                youtube_url = search_results['entries'][0]['webpage_url']
                 output_file = download_youtube_audio(youtube_url, track_name)
                 downloaded_files.append(output_file)
                 

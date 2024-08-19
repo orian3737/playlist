@@ -12,7 +12,7 @@ const Login = () => {
   const [userExists, setUserExists] = useState(null);
   const [form, setForm] = useState(true)
   const navigate = useNavigate();
-  const { userData, setUserData } = useUserContext();
+
 
 
   return (
@@ -20,9 +20,9 @@ const Login = () => {
       <h1>Hello, Welcome to Spotify Playlister</h1>
       
       {form? ( 
-        <LoginForm setUserData={setUserData} setForm={setForm} />
+        <LoginForm setForm={setForm} />
       ) : (
-        <SignupForm setUserData={setUserData} setForm={setForm}/>
+        <SignupForm setForm={setForm}/>
       )}
      
       {error && <p>Error: {error}</p>}

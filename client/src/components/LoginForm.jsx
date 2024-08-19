@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, Label, TextInput } from "flowbite-react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { useUserContext } from '../components/UserContext';
 
-
-function LoginForm({ setUserData, SetForm }) {
+function LoginForm({ setForm }) {
   const [eye, setEye] = useState(false);
   const [isLoading, setIsLoading] = useState(false)
+  const { userData, setUserData } = useUserContext();
 
   const handleSubmit = async () => {
     setIsLoading(true)
@@ -33,7 +34,7 @@ function LoginForm({ setUserData, SetForm }) {
     .then((data)=>{
       console.log('sucess', data)
       setUserData(data)
-      navigate('/Home')
+      navigate('/Home/dash')
     })
     .catch((error) => {
       console.error('Login Error:', error);
