@@ -35,11 +35,12 @@ class SpotifyToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     auth_token = db.Column(db.String(512), nullable=False)
     refresh_token = db.Column(db.String(512), nullable=False)
+    user_spotify_id = db.Column(db.String, nullable=False)
     expires_at = db.Column(db.Integer, nullable=False)  # Store the expiration time
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     user = db.relationship('User', back_populates='spotify_token')
 
-
+ 
 
 class Track(db.Model, SerializerMixin):
     __tablename__ = 'tracks'

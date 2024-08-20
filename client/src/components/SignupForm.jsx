@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Card, Label, TextInput } from "flowbite-react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useUserContext } from '../components/UserContext';
+import './SignupForm.css';
 
 function SignUpForm({ setForm }) {
   const [eye, setEye] = useState(false);
@@ -64,7 +65,7 @@ function SignUpForm({ setForm }) {
   return (
     <div className="signup-form-container">
       <Card className="signup-card">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={(e)=>handleSubmit(e)} className="flex flex-col gap-4">
           <div>
             <Label htmlFor="username" value="Your username" />
             <TextInput 

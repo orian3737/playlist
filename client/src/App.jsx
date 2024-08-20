@@ -5,6 +5,7 @@ import Home from "./routes/Home";
 import ErrorPage from "./routes/ErrorPage";
 import Login from "./routes/Login";
 import Callback from "./routes/Callback";
+import './App.css'
 
 const router = createBrowserRouter([
   {

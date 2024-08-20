@@ -1,0 +1,74 @@
+/* LoginForm.css - Spotify-styled LoginForm */
+
+:root {
+    --spotify-green: #1DB954;
+    --spotify-black: #191414;
+    --spotify-dark-gray: #272323;
+    --spotify-light-gray: #B3B3B3;
+    --spotify-white: #FFFFFF;
+}
+
+.login-form-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Full height */
+    background-image: url('./images/MusicCity.webp'); /* Replace with your image path */
+    background-size: cover; /* Cover the entire container */
+    background-position: center; /* Center the background image */
+    background-repeat: no-repeat; /* Do not repeat the image */
+}
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    background: var(--spotify-dark-gray);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border: 1px solid var(--spotify-light-gray);
+    background-color: var(--spotify-dark-gray);
+    color: var(--spotify-white);
+}
+
+input::placeholder {
+    color: var(--spotify-light-gray);
+}
+
+button.login-button {
+    width: 100%;
+    background-color: var(--spotify-green);
+    color: var(--spotify-white);
+    border: none;
+    padding: 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+button.login-button:hover {
+    background-color: darken(var(--spotify-green), 10%);
+}
+
+button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--spotify-white);
+}
+
+.text-red-500 span {
+    color: var(--spotify-green);
+    cursor: pointer;
+}
+
+.text-red-500 span:hover {
+    text-decoration: underline;
+}
+

@@ -1,7 +1,14 @@
-import { useEffect } from 'react'; 
+import { useEffect, useState } from 'react'; 
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Callback = () =>{
-
+  
+  
+  const location = useLocation();
+  const [code, setCode] = useState(null);
+  const searchParams = new URLSearchParams(location.search);
+  const codeParam = searchParams.get('code');
+  const navigate = useNavigate();
     const handleCallback = async (code) => {
         try {
           const response = await fetch('http://localhost:5000/callback', {
@@ -9,7 +16,7 @@ const Callback = () =>{
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ code }),
+            body: JSON.stringify({code: code}),
           });
       
           if (!response.ok) {
@@ -19,11 +26,11 @@ const Callback = () =>{
           const data = await response.json();
       
           // Now you have the access token from the response
-          console.log('Auth token received:', data.auth);
+          console.log('Auth token received:', data);
       
           // Optionally store the token in sessionStorage
-          sessionStorage.setItem('spotify_access_token', data.auth);
-          navigate('/Home')
+          sessionStorage.setItem('spotify_access_token', data);
+          navigate('/Home/dash')
       
         } catch (error) {
           console.error('Error during callback:', error.message);
@@ -31,15 +38,17 @@ const Callback = () =>{
       };
       
 
+  useEffect(() => {
+    // Extract the code from the URL
 
-      useEffect(() => {
-        const queryParams = new URLSearchParams(window.location.search);
-        const code = queryParams.get('code');
-        
-        if (code) {
-          handleCallback(code);  // Call the fetch function
-        }
-      }, []);
+    if (codeParam) {
+      setCode(codeParam);
+      console.log('Authorization Code:', codeParam);
+      handleCallback(codeParam)
+
+      // You can now send this code to the backend, or do further processing
+    }
+  }, []);
 
     return(
         <div>

@@ -14,6 +14,7 @@ from spotipy.oauth2 import SpotifyOAuth
 from urllib.parse import urlencode
 from datetime import datetime
 from dotenv import load_dotenv
+from datetime import datetime
 import youtube_dl as ytdl_exec  # Corrected import statement
 
 load_dotenv()
@@ -49,7 +50,7 @@ def add_csp_header(response):
 
 
 @app.route('/')
-def home():
+def shit():
     return "Welcome to the Spotify Playlist App!"
 
 class CheckSession(Resource):
@@ -74,7 +75,10 @@ class Signup(Resource):
                 return make_response(new_user.to_dict(), 201)
             except IntegrityError:
                 return {'error': '422 Unprocessable Entity'}, 422
-
+            
+def is_user_logged_in():
+        return 'user_id' in session
+    
 class Login(Resource):
     def post(self):
         data = request.get_json()
@@ -85,6 +89,24 @@ class Login(Resource):
             session['user_id'] = user.id
             return make_response(user.to_dict(), 200)
         return {'error': 'Unauthorized'}, 401
+    
+   
+
+@app.route('/some_protected_route')
+def protected_route():
+    if not is_user_logged_in():
+        return jsonify({"error": "Unauthorized"}), 401
+    # Proceed with the route functionality if the user is logged in
+    return jsonify({"message": "This is a protected route"})
+
+     
+@app.route('/check_login_status')
+def check_login_status():
+    if is_user_logged_in():
+        return jsonify({"logged_in": True})
+    else:
+        return jsonify({"logged_in": False})
+
 
 class Logout(Resource):
     def delete(self):
@@ -100,85 +122,152 @@ api.add_resource(Login, '/login', endpoint='login')
 api.add_resource(Logout, '/logout', endpoint='logout')
 api.add_resource(Signup, '/signup', endpoint='signup')
 
+
 class Callback(Resource):
-    def get(self):
-        code = request.args.get('code')
-        user = User.query.get(session.get('user_id'))
+    def post(self):
+        code = request.get_json().get('code')
+        print(code)
+        user = User.query.filter(User.id == session.get('user_id')).first()
 
         if not code or not user:
-            return "Authorization failed.", 400
+            return "Authorization failed. no user or code", 400
 
         try:
+            # Get the access token and refresh token
             token_info = sp_oauth.get_access_token(code, as_dict=True)
             if not token_info:
-                return "Authorization failed.", 400
+                return "Authorization failed. sp_oauth failed", 400
+            
+            access_token = token_info['access_token']
+            
+            # Make a request to the Spotify API to get the user info
+            headers = {
+                'Authorization': f'Bearer {access_token}'
+            }
+            user_info_response = requests.get('https://api.spotify.com/v1/me', headers=headers)
+            
+            if user_info_response.status_code != 200:
+                return "Failed to retrieve Spotify user info.", 400
+            
+            user_info = user_info_response.json()
 
+            # Create a new SpotifyToken entry in the database
             spotify_token = SpotifyToken(
                 auth_token=token_info['access_token'],
                 refresh_token=token_info['refresh_token'],
                 expires_at=token_info['expires_at'],
+                user_spotify_id=user_info['id'],  # Save Spotify user ID
                 user_id=user.id
             )
+            
             db.session.add(spotify_token)
             db.session.commit()
-            return redirect(url_for('get_playlists'))
+
+            return make_response({'access_token': access_token}, 200)
+        
         except Exception as e:
             return f"Authorization failed: {e}", 400
 
 api.add_resource(Callback, '/callback')
 
-@app.route('/playlists')
-def get_playlists():
-    user_id = session.get('user_id')
-    if not user_id:
-        return redirect(url_for('home'))
 
-    spotify_token = SpotifyToken.query.filter_by(user_id=user_id).first()
+class CheckToken(Resource):
+    def get(self):
+        user_id = session.get('user_id')
+        if not user_id:
+            return make_response({'error': 'User not logged in'}, 401)
+        
+        # Retrieve the user from the database using the user_id
+        user = User.query.get(user_id)
+        
+        if not user:
+            return make_response({'error': 'User not found'}, 404)
 
-    if not spotify_token:
-        return "Spotify token not found.", 400
+        # Check if SpotifyToken exists for the user
+        spotify_token = SpotifyToken.query.filter_by(user_id=user.id).first()
+        
+        if not spotify_token:
+            return make_response({'error': 'User not connected to Spotify'}, 404)
 
-    if sp_oauth.is_token_expired({
-        'access_token': spotify_token.auth_token,
-        'refresh_token': spotify_token.refresh_token,
-        'expires_at': spotify_token.expires_at
-    }):
+        # Check if the token has expired
+        current_time = int(datetime.now().timestamp())
+        
+        if spotify_token.expires_at > current_time:
+            # Token is still valid
+            return make_response({'access_token': spotify_token.auth_token}, 200)
+
+        # Token has expired, refresh it using the sp_oauth.refresh_access_token() method
         try:
-            token_info = sp_oauth.refresh_access_token(spotify_token.refresh_token)
-            spotify_token.auth_token = token_info['access_token']
-            spotify_token.refresh_token = token_info.get('refresh_token', spotify_token.refresh_token)
-            spotify_token.expires_at = token_info['expires_at']
+            new_token_info = sp_oauth.refresh_access_token(spotify_token.refresh_token)
+
+            # Update the SpotifyToken in the database with the new tokens and expiration time
+            spotify_token.auth_token = new_token_info['access_token']
+            spotify_token.refresh_token = new_token_info.get('refresh_token', spotify_token.refresh_token)  # If a new refresh token is provided, update it
+            spotify_token.expires_at = new_token_info['expires_at']
+
             db.session.commit()
-        except Exception:
-            return "Failed to refresh Spotify token.", 400
 
-    spotify = Spotify(auth=spotify_token.auth_token)
+            # Return the new access token to the frontend
+            return make_response({'access_token': new_token_info['access_token']}, 200)
 
-    try:
-        playlists = spotify.current_user_playlists()
-    except Exception:
-        return "Failed to fetch playlists from Spotify.", 400
+        except Exception as e:
+            return make_response({'error': f'Failed to refresh token: {e}'}, 500)
 
-    playlists_with_tracks = []
-    for playlist in playlists['items']:
-        tracks_response = spotify.playlist_tracks(playlist['id'])
-        playlist_with_tracks = {
-            'name': playlist['name'],
-            'description': playlist.get('description', ''),
-            'owner': playlist['owner']['display_name'],
-            'tracks': [
-                {
-                    'name': track_item['track']['name'],
-                    'album': track_item['track']['album']['name'],
-                    'artists': [artist['name'] for artist in track_item['track']['artists']],
-                    'external_url': track_item['track']['external_urls']['spotify']
-                }
-                for track_item in tracks_response['items']
-            ]
-        }
-        playlists_with_tracks.append(playlist_with_tracks)
+api.add_resource(CheckToken, '/check_token')
 
-    return jsonify(playlists_with_tracks)
+
+# @app.route('/playlists')
+# def get_playlists():
+#     user_id = session.get('user_id')
+#     if not user_id:
+#         return redirect(url_for('home'))
+
+#     spotify_token = SpotifyToken.query.filter_by(user_id=user_id).first()
+
+#     if not spotify_token:
+#         return "Spotify token not found.", 400
+
+#     if sp_oauth.is_token_expired({
+#         'access_token': spotify_token.auth_token,
+#         'refresh_token': spotify_token.refresh_token,
+#         'expires_at': spotify_token.expires_at
+#     }):
+#         try:
+#             token_info = sp_oauth.refresh_access_token(spotify_token.refresh_token)
+#             spotify_token.auth_token = token_info['access_token']
+#             spotify_token.refresh_token = token_info.get('refresh_token', spotify_token.refresh_token)
+#             spotify_token.expires_at = token_info['expires_at']
+#             db.session.commit()
+#         except Exception:
+#             return "Failed to refresh Spotify token.", 400
+
+#     spotify = Spotify(auth=spotify_token.auth_token)
+
+#     try:
+#         playlists = spotify.current_user_playlists()
+#     except Exception:
+#         return "Failed to fetch playlists from Spotify.", 400
+
+#     playlists_with_tracks = []
+#     for playlist in playlists['items']:
+#         tracks_response = spotify.playlist_tracks(playlist['id'])
+#         playlist_with_tracks = {
+#             'name': playlist['name'],
+#             'description': playlist.get('description', ''),
+#             'owner': playlist['owner']['display_name'],
+#             'tracks': [
+#                 {
+#                     'name': track_item['track']['name'],
+#                     'album': track_item['track']['album']['name'],
+#                     'artists': [artist['name'] for artist in track_item['track']['artists']],
+#                     'external_url': track_item['track']['external_urls']['spotify']
+#                 }
+#                 for track_item in tracks_response['items']
+#             ]
+#         }
+#         playlists_with_tracks.append(playlist_with_tracks)
+
+#     return jsonify(playlists_with_tracks)
 
 # Spotify setup
 client_id = os.getenv('SPOTIFY_CLIENT_ID')

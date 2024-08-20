@@ -2,7 +2,7 @@ import  { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoginForm from '../components/LoginForm';
 import SignupForm from '../components/SignupForm';
-// import './Login.css';  // Uncomment this if you have a CSS file for styling
+import './Login.css';  // Uncomment this if you have a CSS file for styling
 import { useUserContext } from '../components/UserContext';
 
 const Login = () => {
@@ -20,7 +20,7 @@ const Login = () => {
       <h1>Hello, Welcome to Spotify Playlister</h1>
       
       {form? ( 
-        <LoginForm setForm={setForm} />
+        <LoginForm  setForm={setForm} />
       ) : (
         <SignupForm setForm={setForm}/>
       )}

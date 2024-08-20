@@ -6,11 +6,11 @@ function SpotifyConnect() {
     const navigate = useNavigate();
 
     const handleSpotifyLogin = () => {
-        const clientId = 'YOUR_SPOTIFY_CLIENT_ID';
-        const redirectUri = 'YOUR_REDIRECT_URI';
-        const scopes = 'playlist-read-private playlist-read-collaborative';
+        const clientId = '6714017dbb3a41fc8a032c80b26c0eba'; //add correct name
+        const redirectUri =  'http://127.0.0.1:5173/Home/callback' //import.meta.env.VITE_SPOTIFY_REDIRECT; //add correct name /Home/callback
+        const scopes = 'playlist-read-private playlist-read-collaborative user-read-private user-read-email';
         
-        const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(scopes)}`;
+        const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scopes)}`;
         window.location.href = authUrl;
       };
     
