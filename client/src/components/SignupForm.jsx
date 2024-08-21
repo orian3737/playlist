@@ -8,7 +8,7 @@ import './SignupForm.css';
 function SignUpForm({ setForm }) {
   const [eye, setEye] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { userData, setUserData } = useUserContext();
+  const [ userData, setUserData ] = useUserContext();
   const [values, setValues] = useState({
     username: '',
     display_name: '',
@@ -27,7 +27,7 @@ function SignUpForm({ setForm }) {
     e.preventDefault();
     setIsLoading(true);
 
-    const url = 'http://localhost:5000/signup';
+    const url = 'http://127.0.0.1:5000/signup';
 
     fetch(url, {
       method: 'POST',

@@ -1,0 +1,75 @@
+/* Home.css */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%; /* Ensures that the body takes full height of the viewport */
+    background-repeat: no-repeat;
+    background-position: center;
+    color: white; /* Ensure text is visible on dark backgrounds */
+}
+
+/* Full viewport height and width for the Home component */
+.home-container {
+    width: 100vw;  /* Full viewport width */
+    height: 100vh; /* Full viewport height */
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover; /* Ensure the background image covers the full area */
+}
+
+.playlist-card {
+    width: 80%;
+    max-width: 800px;
+    margin: 20px auto;
+    background: var(--spotify-dark-gray);
+    border: 2px solid black;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    padding: 20px;
+}
+
+
+.playlist-window {
+    max-height: 400px;
+    overflow-y: scroll; /* Makes the playlist area scrollable */
+    padding: 10px;
+}
+
+/* Reusing Spotify button styles for consistency */
+.spotify-button {
+    background-color: var(--spotify-green);
+    color: var(--spotify-white);
+    font-weight: bold;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.spotify-button:hover {
+    background-color: darken(var(--spotify-green), 10%);
+}
+
+/* Adjust link and text styling to ensure readability */
+a {
+    color: var(--spotify-green);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Styling for titles and text inside the playlist window */
+h2, h3, p {
+    color: var(--spotify-green);
+    
+}
+
+/* List styling */
+ul, li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}

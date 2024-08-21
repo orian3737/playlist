@@ -2,11 +2,12 @@ import { useState, useContext } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { GiAbstract049 } from "react-icons/gi";
 import { FaBars, FaTimes } from "react-icons/fa";
-import { UserContext } from './UserContext';
+import { useUserContext } from './UserContext';
+import Logout from './Logout'; 
 
 const Navbar = () => {
   const [click, setClick] = useState(false);
-  const { userData, spotifyConnected } = useContext(UserContext);
+  const {userData, setUserData} = useUserContext()
 
   const handleClick = () => setClick(!click);
   const closeMobileMenu = () => {
@@ -36,7 +37,7 @@ const Navbar = () => {
           </li>
           <li className="h-20 border-b-2 border-transparent md:hover:border-blue-400">
             <NavLink
-              to="/How To "
+              to="/"
               className={({ isActive }) => "text-white flex items-center py-2 px-4 h-full" + (isActive ? " text-blue-400" : '')}
               onClick={closeMobileMenu}
             >
@@ -55,14 +56,10 @@ const Navbar = () => {
         </ul>
         <div className="text-white">
           {userData ? (
-            <>
+            <div>
               Logged in as {userData.username}
-              {spotifyConnected ? (
-                <span> | Spotify Connected</span>
-              ) : (
-                <Link to="/connect-spotify" className="ml-2 underline">Connect to Spotify</Link>
-              )}
-            </>
+             <Logout/>
+            </div>
           ) : (
             <Link to="/login" className="underline">WELCOME</Link>
           )}

@@ -1,7 +1,7 @@
 from config import db, flask_bcrypt
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy_serializer import SerializerMixin
-
+from sqlalchemy import DateTime
 class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
 
@@ -31,12 +31,14 @@ class User(db.Model, SerializerMixin):
         return flask_bcrypt.check_password_hash(self._password_hash, password.encode('utf-8'))
 
 
-class SpotifyToken(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class SpotifyToken(db.Model, SerializerMixin):
+    __tablename__ = 'tokens'
+        
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     auth_token = db.Column(db.String(512), nullable=False)
     refresh_token = db.Column(db.String(512), nullable=False)
     user_spotify_id = db.Column(db.String, nullable=False)
-    expires_at = db.Column(db.Integer, nullable=False)  # Store the expiration time
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=False)  # Store the expiration time
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     user = db.relationship('User', back_populates='spotify_token')
 
