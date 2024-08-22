@@ -8,7 +8,7 @@ import './SignupForm.css';
 function SignUpForm({ setForm }) {
   const [eye, setEye] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [ userData, setUserData ] = useUserContext();
+  const { userData, setUserData } = useUserContext();
   const [values, setValues] = useState({
     username: '',
     display_name: '',
@@ -64,7 +64,7 @@ function SignUpForm({ setForm }) {
 
   return (
     <div className="signup-form-container">
-      <Card className="signup-card">
+      <Card className="signup-card rounded-lg  shadow-lg shadow-spotify border-spotify">
         <form onSubmit={(e)=>handleSubmit(e)} className="flex flex-col gap-4">
           <div>
             <Label htmlFor="username" value="Your username" />
@@ -76,6 +76,7 @@ function SignUpForm({ setForm }) {
               required 
               value={values.username}
               onChange={handleChange}
+              className='text-black'
             />
           </div>
           <div>
@@ -88,6 +89,7 @@ function SignUpForm({ setForm }) {
               required 
               value={values.display_name}
               onChange={handleChange}
+              className='text-black'
             />
           </div>
           <div className="flex flex-row items-center">

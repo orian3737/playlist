@@ -7,7 +7,8 @@ import Login from "./routes/Login";
 import Callback from "./routes/Callback";
 import HowTo from './routes/HowTo';
 import Tracks from './routes/Tracks';
-import './App.css'
+import './App.css';
+import Downloads from './routes/Downloads';
 
 const router = createBrowserRouter([
   {
@@ -47,6 +48,11 @@ const router = createBrowserRouter([
       {
         path: "/Home/callback",
         element: <Callback />,
+        
+      },
+      {
+        path: "/downloads",
+        element: <Downloads />,
         
       },
     ],

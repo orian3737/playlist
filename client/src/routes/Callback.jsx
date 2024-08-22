@@ -49,14 +49,14 @@ const Callback = () =>{
                   setToken({
                       access_token:data.access_token,
                       expires_in: data.expires_in,
-                      refresh_token: data.refresh_token
+                      refresh_token: data.refresh_token,
                     })
-                    
+                    console.log('return from spotify', data)
                    saveToken(data)
          
                     
                     console.log(data)
-                    sessionStorage.setItem('spotify_access_token', data.a);
+                    sessionStorage.setItem('spotify_access_token', data.access_token);
                     
                 } else {
                   console.error('Error fetching token:', data);
@@ -100,7 +100,7 @@ const Callback = () =>{
                     throw new Error('Authorization failed');
                   }
               
-                  const data = await response.json();
+                const data = await response.json();
               
                   // Now you have the access token from the response
                   console.log('Auth token received:', data);
@@ -116,7 +116,7 @@ const Callback = () =>{
       
             
                 return (
-        <div>
+        <div className="bg-fixed flex justify-center bg-music-city-7 bg-auto bg-center h-fit">
         <h1>working</h1>
         </div>
     )

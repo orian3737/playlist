@@ -8,21 +8,23 @@ const Home = () => {
   const [playlists, setPlaylists] = useState([]);
   const [error, setError] = useState(null);
   const [validToken, setValidToken] = useState(false);
-  const [backgroundImage, setBackgroundImage] = useState('');
+  
+ 
+  //const [backgroundImage, setBackgroundImage] = useState('');
   
 
+  // const images = ['/images/MusicCity3.webp',
+  //   '/images/MusicCity4.webp',
+  //   '/images/MusicCity5.webp',
+  //   '/images/MusicCity6.webp'];
+  // const randomImage = images[Math.floor(Math.random() * images.length)];
+
   useEffect(() => {
-    // Set a random background image
-    const images = ['/images/MusicCity3.webp',
-      '/images/MusicCity4.webp',
-      '/images/MusicCity5.webp',
-      '/images/MusicCity6.webp'];
-    const randomImage = images[Math.floor(Math.random() * images.length)];
-    setBackgroundImage(randomImage);
+   
+    const storedToken = sessionStorage.getItem('spotify_access_token')
 
     // Fetch Spotify access token
     const getSpotifyToken = async () => {
-      const storedToken = sessionStorage.getItem('spotify_access_token');
       if (storedToken) {
         setValidToken(true);
       } else {
@@ -45,7 +47,7 @@ const Home = () => {
       }
     };
     getSpotifyToken();
-  }, []);
+  }, [])
 
   // useEffect(() => {
   //   // Fetch playlists if there's a valid token
@@ -78,20 +80,21 @@ const Home = () => {
 
   return (
     
-    <div style={{ backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover' }}>
+    <div className={validToken? ('bg-fixed flex justify-center bg-music-city-5 bg-auto bg-center h-fit'):('bg-fixed flex justify-center justify-items-center items-center bg-music-city-3 bg-auto bg-center h-dvh')}>
       {validToken? (
         <div className="playlist-card">
           <h1 className="text-3xl text-spotifygreen" style={{ textAlign: 'center', fontWeight: '900',}}>Your Playlists</h1>
           <div className="playlist-window">
-            <Playlists accessToken ={sessionStorage.getItem('spotify_access_token')} />
+            <Playlists />
           </div>
         <div className='fixed bottom-0 right-0 bg-red-900 rounded-md mb-2'>
-        <DisconnectSpotify/>
+        <DisconnectSpotify setValidToken={setValidToken}/>
         </div>
         </div>
       ) : (
+      
         <SpotifyConnect />
-        
+       
       )}
     
    

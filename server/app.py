@@ -13,6 +13,7 @@ from spotipy.cache_handler import FlaskSessionCacheHandler
 from spotipy.oauth2 import SpotifyOAuth
 from urllib.parse import urlencode
 from datetime import datetime, timedelta, timezone
+from ytmusicapi import YTMusic
 
 from dotenv import load_dotenv
 import youtube_dl as ytdl_exec  # Corrected import statement
@@ -184,20 +185,24 @@ class Callback(Resource):
                 
             return make_response({"Failed to gather info": {e}}, 400)
                 
-        try:
-                existing_token = SpotifyToken.query.filter(SpotifyToken.user_id ==user).first()
-                if existing_token:
-                    existing_token.auth_token = auth_token
-                    existing_token.refresh_token = refresh_token
-                    existing_token.expires_at = expires_at
-                    existing_token.user_spotify_id = user_info[id]
-                    existing_token.user_id = user
-                    db.session.commit()
+            # existing_token = SpotifyToken.query.filter(SpotifyToken.user_id ==user).first()
+            # if existing_token:
+            #     try:
+            #         if existing_token:
+            #             existing_token.auth_token = auth_token
+            #             existing_token.refresh_token = refresh_token
+            #             existing_token.expires_at = expires_at
+            #             existing_token.user_spotify_id = user_info['id']
+            #             existing_token.user_id = user
+            #             db.session.commit()
 
-                     # Return the new access token to the frontend
-                    return make_response({'access_token': existing_token['auth_token']}, 200)
-
-                else:
+            #             # Return the new access token to the frontend
+            #             return make_response({'access_token': existing_token.auth_token}, 200)
+            #     except Exception as e:
+            #         db.session.rollback() 
+            #         return make_response({"Failed to add SpotifyToken": {e}}, 400)
+            # else:
+        try:    
                     spotify_token = SpotifyToken(
                         auth_token=auth_token,
                         refresh_token=refresh_token,
@@ -210,8 +215,8 @@ class Callback(Resource):
                     db.session.commit()
                     return make_response({'access_token': auth_token}, 201)
         except Exception as e:
-                db.session.rollback() 
-                return make_response({"Failed to add SpotifyToken": {e}}, 400)
+                    db.session.rollback() 
+                    return make_response({"Failed to add SpotifyToken": {e}}, 400)
         
 
 api.add_resource(Callback, '/callback')
@@ -279,7 +284,134 @@ class RemoveSpotifyConnection(Resource):
             return make_response({'message':'Unauthorizied: not logged in'}, 401)
 
 api.add_resource(RemoveSpotifyConnection, '/remove_connection')
+class DownloadResource(Resource):
+    def post(self):
+        user_id = session.get('user_id')
+        if not user_id:
+            return make_response({'error': 'User not logged in'}, 401)
+
+        track_id = request.get_json().get('track_id')
+        print(track_id)
+
+        if not track_id:
+            return make_response({'error': 'Track ID not provided'}, 400)
+
+        check_track= Track.query.filter(Track.song_id == track_id).first()
+        if check_track:
+
+            try:
+                new_download = Download(
+                    user_id=user_id,
+                    track_id=check_track.id,
+                    date_time=datetime.now(timezone.utc)
+                )
+                db.session.add(new_download)
+                db.session.commit()
+                return make_response({'message': 'Download added successfully'}, 201)
+            except Exception as e:
+                db.session.rollback()
+                return make_response({'error': f'Failed to add download: {str(e)}'}, 500)
+        else:
+            return make_response({'message': 'song unable to download not found'}, 404)
+
+    def get(self):
+        user_id = session.get('user_id')
+        if not user_id:
+            return make_response({'error': 'User not logged in'}, 401)
+
+        try:
+            downloads = Download.query.filter_by(user_id=user_id).order_by(Download.date_time.desc()).all()
+            downloads_list = [
+                {
+                    'name': download.track.name,
+                    'artist': download.track.artist,
+                    'date': download.date_time.strftime('%m/%d/%y')
+                }
+                for download in downloads
+            ]
+            return make_response({'downloads': downloads_list}, 200)
+        except Exception as e:
+            return make_response({'error': f'Failed to fetch downloads: {str(e)}'}, 500)
+
+api.add_resource(DownloadResource, '/downloads')
+
+
+class SaveTracks(Resource):
+    def post(self):
+        # Get the list of songs from the request body
+        songs = request.get_json().get('songs')
         
+
+        if not songs:
+            return make_response({'error': 'No songs provided'}, 400)
+
+        # Flag to track if any songs were successfully added
+        any_added = False
+
+        # Loop through each song in the list
+        for song in songs:
+            # Extract song_id, name, and artist from the song object
+            song_id = song.get('song_id')
+            name = song.get('name')
+            artist = song.get('artist')
+
+            if not song_id or not name or not artist:
+                continue  # Skip if song_id, name, or artist is missing
+
+            # Check if the song already exists in the database
+            existing_song = Track.query.filter(Track.song_id == song_id).first()
+
+            if existing_song:
+                continue  # Skip if the song already exists
+
+            try:
+                # # Prepare query for YouTube Music search
+                # query = f"{name} by {artist}"
+                
+                # # Search for YouTube URL
+                # yt_url = search(query)
+
+                # # If search fails and returns None, skip this song
+                # if yt_url is None:
+                #     print(f"Skipping {name} by {artist} due to failed YouTube search")
+                #     continue
+
+                # Add new song to the database
+                new_song = Track(
+                    song_id=song_id,
+                    name=name,
+                    artist=artist,
+                    
+                )
+                db.session.add(new_song)
+                any_added = True  # Mark that at least one song was added
+                print(f'Song added: {name} by {artist}')
+            
+            except Exception as e:
+                db.session.rollback()
+                print(f'Song add failed for {name} by {artist}: {str(e)}')
+
+        # Commit only if any songs were added
+        if any_added:
+            db.session.commit()
+
+        return make_response({'message': 'Tracks processed successfully'}, 201)
+
+api.add_resource(SaveTracks, '/save_tracks')
+
+# Helper functions for YouTube search
+
+def song_url(song_id: str) -> str:
+    return ytm.utils.url_ytm('watch', params={'v': song_id})
+
+def search(query: str) -> str:
+    try:
+        # Search for the song on YouTube Music
+        song_id = ytm.YouTubeMusic().search_songs(query)['items'][0]['id']
+        return song_url(song_id)
+    except Exception as e:
+        print(f"Failed to fetch YouTube URL for query: {query}, error: {str(e)}")
+        return None  # Return None if the search fails
 
 # @app.route('/playlists')
 # def get_playlists():

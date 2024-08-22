@@ -79,19 +79,19 @@ function LoginForm({ setForm }) {
 
 
   return (
-    <div className="login-form-container">
-      <Card className="login-card">
+    
+      <Card className="login-card flex rounded-lg flex shadow-lg h-fit shadow-spotify border-spotify">
         <form onSubmit={(e)=>handleSubmit(e)} className="flex flex-col gap-4">
           <div>
             <Label htmlFor="email1" value="Your username" />
-            <TextInput name='username' value={values.username} onChange={handleChange} id="email1" type="text" placeholder="username" required />
+            <TextInput className='text-black' name='username' value={values.username} onChange={handleChange} id="email1" type="text" placeholder="username" required />
           </div>
           <div className="text-red-500">
   Don't have an account? <span onClick={()=>{setForm(false)}} >Sign up!</span>
 </div>
 
           <div className="flex flex-row items-center">
-            <TextInput name='password' value={values.password} onChange={handleChange} id="password1" type={eye ? 'text' : 'password'} required />
+            <TextInput className='text-black' name='password' value={values.password} onChange={handleChange} id="password1" type={eye ? 'text' : 'password'} required />
             <button onClick={() => setEye(!eye)} type="button">
               {eye ? <FaEye /> : <FaEyeSlash />}
             </button>
@@ -99,8 +99,7 @@ function LoginForm({ setForm }) {
           <Button className="login-button" type="submit">Submit</Button>
         </form>
       </Card>
-    </div>
-    
+ 
   );
 }
 

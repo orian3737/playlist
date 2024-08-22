@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a7f39109cfef98820e05bda49bad87b7b36b379b64e8fb9708068bc839109c00"
+            "sha256": "58f9b8ca3653c968dcedcc86ec8414f25b2ed74129332284bf77765cc92adbe7"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -203,12 +203,12 @@
         },
         "faker": {
             "hashes": [
-                "sha256:32c78b68d2ba97aaad78422e4035785de2b4bb46b81e428190fc11978da9036c",
-                "sha256:55ed0c4ed7bf16800c64823805f6fbbe6d4823db4b7c0903f6f890b8e4d6c34b"
+                "sha256:1c44d4bdcad7237516c9a829b6a0bcb031c6a4cb0506207c480c79f74d8922bf",
+                "sha256:4ce108fc96053bbba3abf848e3a2885f05faa938deb987f97e4420deaec541c4"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.8'",
-            "version": "==27.0.0"
+            "version": "==27.4.0"
         },
         "flask": {
             "hashes": [
@@ -344,19 +344,19 @@
         },
         "importlib-metadata": {
             "hashes": [
-                "sha256:11901fa0c2f97919b288679932bb64febaeacf289d18ac84dd68cb2e74213369",
-                "sha256:72e8d4399996132204f9a16dcc751af254a48f8d1b20b9ff0f98d4a8f901e73d"
+                "sha256:66f342cc6ac9818fc6ff340576acd24d65ba0b3efabb2b4ac08b598965a4a2f1",
+                "sha256:9a547d3bc3608b025f93d403fdd1aae741c24fbb8314df4b155675742ce303c5"
             ],
             "markers": "python_version < '3.10'",
-            "version": "==8.2.0"
+            "version": "==8.4.0"
         },
         "importlib-resources": {
             "hashes": [
-                "sha256:6cbfbefc449cc6e2095dd184691b7a12a04f40bc75dd4c55d31c34f174cdf57a",
-                "sha256:8bba8c54a8a3afaa1419910845fa26ebd706dc716dd208d9b158b4b6966f5c5c"
+                "sha256:20600c8b7361938dc0bb2d5ec0297802e575df486f5a544fa414da65e13721f7",
+                "sha256:dda242603d1c9cd836c3368b1174ed74cb4049ecd209e7a1a0104620c18c5c11"
             ],
             "markers": "python_version < '3.9'",
-            "version": "==6.4.2"
+            "version": "==6.4.4"
         },
         "itsdangerous": {
             "hashes": [
@@ -681,12 +681,12 @@
         },
         "werkzeug": {
             "hashes": [
-                "sha256:097e5bfda9f0aba8da6b8545146def481d06aa7d3266e7448e2cccf67dd8bd18",
-                "sha256:fc9645dc43e03e4d630d23143a04a7f947a9a3b5727cd535fdfe155a17cc48c8"
+                "sha256:02c9eb92b7d6c06f31a782811505d2157837cea66aaede3e217c7c27c039476c",
+                "sha256:34f2371506b250df4d4f84bfe7b0921e4762525762bbd936614909fe25cd7306"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.8'",
-            "version": "==3.0.3"
+            "version": "==3.0.4"
         },
         "youtube-dl": {
             "hashes": [
@@ -695,6 +695,15 @@
             ],
             "index": "pypi",
             "version": "==2021.12.17"
+        },
+        "ytmusicapi": {
+            "hashes": [
+                "sha256:b306c330bdf81888f01d9f62fea96bf19bdd521999536988e98dbf6be41009fe",
+                "sha256:fb46169553b4ed59b7450b088c861eda86d88cff0080b9ddf53d4452dba92386"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8'",
+            "version": "==1.7.5"
         },
         "zipp": {
             "hashes": [

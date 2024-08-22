@@ -12,10 +12,8 @@ const Login = () => {
   const [userExists, setUserExists] = useState(null);
   const [form, setForm] = useState(true);
   const navigate = useNavigate();
-  const [backgroundImage, setBackgroundImage] = useState('');
+ // const [backgroundImage, setBackgroundImage] = useState('');
 
-  useEffect(() => {
-    // Set a random background image
     const images = [
       '/images/MusicCity3.webp',
       '/images/MusicCity4.webp',
@@ -23,12 +21,13 @@ const Login = () => {
       '/images/MusicCity6.webp'
     ];
     const randomImage = images[Math.floor(Math.random() * images.length)];
-    setBackgroundImage(randomImage);
-  }, []);
+    
+  
+    // Set a random background image
 
   return (
-    <div style={{ backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', height: '100vh' }}>
-      <h1>Hello, Welcome to Spotify Playlister</h1>
+    <div className='bg-fixed flex flex-col justify-items-center items-center bg-music-city-1 bg-auto bg-center h-dvh'>
+      <h1 className={`text-3xl  center justify-center mt-40 mb-${form? '24': '0'}`} >Hello, Welcome to Spotify Playlister</h1>
       
       {form ? ( 
         <LoginForm setForm={setForm} />

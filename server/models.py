@@ -50,6 +50,7 @@ class Track(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     song_id = db.Column(db.String(120), nullable=False)
     name = db.Column(db.String(255), nullable=False)
+    artist = db.Column(db.String, nullable = False)
     yt_url = db.Column(db.String(255))
 
     downloads = db.relationship('Download', back_populates='track', cascade="all, delete-orphan")

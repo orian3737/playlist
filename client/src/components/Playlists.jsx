@@ -3,10 +3,11 @@ import { Card } from "flowbite-react";
 import { FaArrowRight, FaDownload } from "react-icons/fa";
 import { Link } from 'react-router-dom';
 
-const Playlists = ({ accessToken }) => {
+const Playlists = () => {
   const [playlists, setPlaylists] = useState([]);
   const [error, setError] = useState('');
-
+  const accessToken = sessionStorage.getItem('spotify_access_token')
+  
   useEffect(() => {
     const fetchPlaylists = async () => {
       try {
@@ -35,36 +36,10 @@ const Playlists = ({ accessToken }) => {
     fetchPlaylists();
   }, [accessToken]);
 
-  const downloadPlaylist = async (playlistId) => {
-    const config = {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ playlist_id: playlistId }),
-        credentials: 'include'  // Ensure cookies are included with the request
-    };
-
-    fetch('http://localhost:5000/download/playlist', config)
-        .then(res => {
-            if (!res.ok) {
-                throw new Error(`HTTP error! status: ${res.status}`);
-            }
-            return res.json();
-        })
-        .then(data => {
-            console.log(data);
-            alert('Playlist downloaded successfully!');
-        })
-        .catch(err => {
-            console.error('Error downloading playlist:', err.message);
-            alert('Error downloading playlist: ' + err.message);
-        });
-};
   if (error) {
     return <p className="text-red-500">{error}</p>;
   }
-
+ 
   return (
     <div className="grid grid-cols-2 gap-4">
       {playlists.map((playlist) => (
@@ -85,9 +60,7 @@ const Playlists = ({ accessToken }) => {
               <Link to={`/tracks/${playlist.id}`} className="inline-flex items-center text-spotifygreen hover:underline">
                 Go to Playlist <FaArrowRight className="ml-2" />
               </Link>
-              <button onClick={() => downloadPlaylist(playlist.id)} className="ml-4 inline-flex items-center  hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                Download <FaDownload className="ml-2" />
-              </button>
+              
             </div>
           </div>
         </Card>

@@ -20,7 +20,7 @@ python-dotenv = "*"
 psycopg2-binary = "*"
 gunicorn = "*"
 spotipy = "*"
-
+ytmusicapi = "*"
 [dev-packages]
 
 [requires]

@@ -8,16 +8,7 @@
     --spotify-white: #FFFFFF;
 }
 
-.login-form-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh; /* Full height */
-    background-image: url('./images/MusicCity.webp'); /* Replace with your image path */
-    background-size: cover; /* Cover the entire container */
-    background-position: center; /* Center the background image */
-    background-repeat: no-repeat; /* Do not repeat the image */
-}
+
 .login-card {
     width: 100%;
     max-width: 400px;
@@ -34,7 +25,7 @@ input {
     border-radius: 5px;
     border: 1px solid var(--spotify-light-gray);
     background-color: var(--spotify-dark-gray);
-    color: var(--spotify-white);
+    color: var(--spotify-black);
 }
 
 input::placeholder {

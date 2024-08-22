@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { HiInformationCircle } from "react-icons/hi";
 import { Alert, Button } from "flowbite-react";
 
-function DisconnectSpotify() {
+function DisconnectSpotify({setValidToken}) {
 
 
   const [message, setMessage] = useState(null);
@@ -21,7 +21,9 @@ function DisconnectSpotify() {
             message:' Spotify Connection Removed Successfully.',
             isError: false,
             });
-        sessionStorage.removeItem('spotify_access_token')    
+        sessionStorage.removeItem('spotify_access_token')
+        setValidToken(false)
+        location.reload();    
       } else  {
         const data = await response.json();
         setMessage(

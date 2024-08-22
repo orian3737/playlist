@@ -17,7 +17,7 @@ const Navbar = () => {
 
   return (userData? (
     <nav className="bg-spotify h-20 flex justify-center items-center sticky top-0 z-50">
-      <div className="flex justify-between h-20 w-full max-w-7xl mx-auto px-4">
+      <div className="flex justify-between h-20 w-full max-w-7xl mx-auto px-4 bg-spotify ">
         <Link to="/Home/dash" className="text-white text-2xl flex items-center" onClick={closeMobileMenu}>
           <GiAbstract049 className="mr-2" />
           PlayLister 

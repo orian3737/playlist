@@ -4,7 +4,7 @@
     --spotify-green: #1DB954;
     --spotify-black: #191414;
     --spotify-dark-gray: #272323;
-    --spotify-light-gray: #B3B3B3;
+    --spotify-light-gray: #050101;
     --spotify-white: #FFFFFF;
 }
 
@@ -34,11 +34,11 @@ input {
     border-radius: 5px;
     border: 1px solid var(--spotify-light-gray);
     background-color: var(--spotify-dark-gray);
-    color: var(--spotify-white);
+    color: var(--spotify-black);
 }
 
 input::placeholder {
-    color: var(--spotify-light-gray);
+    color: var(--spotify-black);
 }
 
 button.signup-button {
