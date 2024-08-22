@@ -56,12 +56,7 @@ button.signup-button:hover {
     background-color: darken(var(--spotify-green), 10%);
 }
 
-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--spotify-white);
-}
+
 
 .text-red-500 span {
     color: var(--spotify-green);

@@ -21,16 +21,14 @@ body, html {
     width: 80%;
     max-width: 800px;
     margin: 20px auto;
-    background: var(--spotify-dark-gray);
-    border: 2px solid black;
+    background: var(--spotify-dark-gray); 
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     padding: 20px;
 }
 
 
 .playlist-window {
-    max-height: 400px;
+    max-height: 100v;
     overflow-y: scroll; /* Makes the playlist area scrollable */
     padding: 10px;
 }

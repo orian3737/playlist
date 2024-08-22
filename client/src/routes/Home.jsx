@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import SpotifyConnect from '../components/SpotifyConnect';
 import './Home.css';
 import Playlists from '../components/Playlists'
+import DisconnectSpotify  from '../components/DisconnectSpotify'
 
 const Home = () => {
   const [playlists, setPlaylists] = useState([]);
@@ -27,7 +28,7 @@ const Home = () => {
       } else {
         try {
           const response = await fetch('http://127.0.0.1:5000/check_token', {
-            method: 'GET', credentials: 'include'
+            method: 'PATCH', credentials: 'include'
           });
           if (response.ok) {
             const data = await response.json();
@@ -80,15 +81,20 @@ const Home = () => {
     <div style={{ backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover' }}>
       {validToken? (
         <div className="playlist-card">
-          <h2 style={{ textAlign: 'center', fontWeight: 'bold', }}>Your Playlists</h2>
+          <h1 className="text-3xl text-spotifygreen" style={{ textAlign: 'center', fontWeight: '900',}}>Your Playlists</h1>
           <div className="playlist-window">
             <Playlists accessToken ={sessionStorage.getItem('spotify_access_token')} />
           </div>
+        <div className='fixed bottom-0 right-0 bg-red-900 rounded-md mb-2'>
+        <DisconnectSpotify/>
+        </div>
         </div>
       ) : (
         <SpotifyConnect />
         
       )}
+    
+   
     </div>
   );
 };

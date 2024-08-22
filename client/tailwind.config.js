@@ -13,6 +13,7 @@ module.exports = {
         spotifylightgray: '#B3B3B3',
         spotifywhite: '#FFFFFF'
       }
+      
     },
   },
   plugins: [

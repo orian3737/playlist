@@ -5,7 +5,8 @@ import Home from "./routes/Home";
 import ErrorPage from "./routes/ErrorPage";
 import Login from "./routes/Login";
 import Callback from "./routes/Callback";
-import HowTo from './routes/HowTo'
+import HowTo from './routes/HowTo';
+import Tracks from './routes/Tracks';
 import './App.css'
 
 const router = createBrowserRouter([
@@ -13,8 +14,14 @@ const router = createBrowserRouter([
     path: "/",
     element: <AppLayout />,
     errorElement: <ErrorPage />,
-    loader: async () =>{ return fetch(`http://127.0.0.1:5000/check_session`, { credentials: 'include' }) },
-    
+    loader: async () =>{const response = await fetch(`http://127.0.0.1:5000/check_session`, { credentials: 'include' })
+    if(response.ok)
+      {  const data = await response.json()
+        return data
+      } else{
+        return null
+      }
+    },    
     children: [
       {
         path: "/",
@@ -22,7 +29,7 @@ const router = createBrowserRouter([
         
     },
       {
-        path: "/Login",
+        path: "/login",
         element: <Login/>,
         
     },
@@ -30,6 +37,11 @@ const router = createBrowserRouter([
         path: "/Home/dash",
         element: <Home />,
         
+      },
+      {
+        path: "/tracks/:id",
+        element: <Tracks/>, 
+    
       },
       
       {

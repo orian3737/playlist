@@ -104,7 +104,7 @@ function SignUpForm({ setForm }) {
               {eye ? <FaEye /> : <FaEyeSlash />}
             </button>
           </div>
-          <Button className="signup-button" type="submit" disabled={isLoading}>
+          <Button className="signup-btn" type="submit" disabled={isLoading}>
             {isLoading ? 'Signing up...' : 'Sign Up'}
           </Button>
           <div className="text-red-500">

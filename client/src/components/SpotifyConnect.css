@@ -25,15 +25,6 @@
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-input {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-    border: 1px solid var(--spotify-light-gray);
-    background-color: var(--spotify-dark-gray);
-    color: var(--spotify-white);
-}
 
 input::placeholder {
     color: var(--spotify-light-gray);
@@ -54,12 +45,6 @@ button.spotify-button:hover {
     background-color: darken(var(--spotify-green), 10%);
 }
 
-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--spotify-white);
-}
 
 .text-red-500 span {
     color: var(--spotify-green);

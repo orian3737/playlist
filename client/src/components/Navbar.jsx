@@ -15,7 +15,7 @@ const Navbar = () => {
     window.scrollTo(0, 0);
   };
 
-  return (
+  return (userData? (
     <nav className="bg-spotify h-20 flex justify-center items-center sticky top-0 z-50">
       <div className="flex justify-between h-20 w-full max-w-7xl mx-auto px-4">
         <Link to="/Home/dash" className="text-white text-2xl flex items-center" onClick={closeMobileMenu}>
@@ -44,29 +44,23 @@ const Navbar = () => {
               PlayLister How To
             </NavLink>
           </li>
-          <li className="h-20 border-b-2 border-transparent md:hover:border-blue-400">
-            <NavLink
-              to="/login"
-              className={({ isActive }) => "text-white flex items-center py-2 px-4 h-full" + (isActive ? " text-blue-400" : '')}
-              onClick={closeMobileMenu}
-            >
-              Sign Up / Login
-            </NavLink>
-          </li>
         </ul>
         <div className="text-white">
-          {userData ? (
-            <div>
-              Logged in as {userData.username}
-             <Logout/>
-            </div>
-          ) : (
-            <Link to="/login" className="underline">WELCOME</Link>
-          )}
-        </div>
+  {userData ? (
+    <div className="flex items-center space-x-2.5" style={{marginTop: '10px'}}> {/* This adds space between elements inside */}
+      <span>Logged in as {userData.username}</span>
+      <Logout />
+    </div>
+  ) : (
+    <Link to="/login" className="underline" style={{ marginLeft: '10px' }}>WELCOME</Link>
+  )}
+</div>
       </div>
     </nav>
-  );
+  ):(
+    <>
+    </>
+  ))
 };
 
 export default Navbar;
